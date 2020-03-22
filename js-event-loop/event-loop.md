@@ -163,7 +163,7 @@ callback2 = () => console.log("我是 callback2");
 
 const func2 = () => {
   console.log("func2 开始");
-  // setTimeout 就是一个异步调用的 Timer API, 他会让 Timer 及时一定事件，比如这里是1秒，然后出发计时结束，把 callback将会被放入 callback queue
+  // setTimeout 就是一个异步调用的 Timer API, 他会让 Timer 计时一定的时间，比如这里是1秒，然后触发计时结束，随后callback将会被放入 callback queue
   setTimeout(callback2, 1000);
   console.log("func2 结束");
 };
@@ -188,7 +188,7 @@ func1();
 
 
 
-我们开说说这段代码是怎么在在刚才解释的机制下执行的：
+我们来说说这段代码是怎么在在刚才解释的机制下执行的：
 
 1. func1被放入stack，并开始执行里面的内容
 
