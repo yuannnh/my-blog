@@ -1,6 +1,6 @@
 const step1 = () => console.log(1);
 const step3 = () => console.log(3);
-const step4 = () => console.log(4);
+const step4 = () => console.lo();
 
 // 用 Promise 简单模拟一个执行时间为1秒，并在结束时候打印2的方程
 const step2 = () =>
