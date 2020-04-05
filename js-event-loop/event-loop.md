@@ -261,15 +261,55 @@ Web应用的性能是个很大的话题，在这里我们只讨论性能中与 J
 - render (其中包括一些计算工作) 也是在 JS 的线程里进行的。
 - render 类似一个我们上一节提到的callback, 在 Stack 没有被清空的情况下是没法被放入执行的。
 
-如果Stack中有一个function执行时间超过16.66ms，就会导致下一个render的推迟执行，那么在这个function结束前，页面是停在一个静止的状态的，用户在页面上点击也不会有什么反应。这就是我们有时会感受到的页面有点卡。所以为了防止这种性能差的表现，**我们不建议将耗时的function放到 JS 的主线程里执行**。
+那如果Stack中有一个function执行时间超过16.66ms 会怎么样？答案是它会导致下一个render的推迟执行。在这个function结束前，页面是停在一个静止的状态的，用户在页面上点击也不会有什么反应。这就是我们有时会感受到的 “页面有点卡”。所以为了防止这种性能差的表现，**我们不建议将耗时的function放到 JS 的主线程里执行**。
 
 其实由于render本身的执行也需要消耗时间，所以我们还要给它留出空间。根据谷歌的官方文档，我们最好是将自己的逻辑保证在10ms以下，甚至是3-4ms。
 
-然而由于业务的需要，在开发中一些耗时的逻辑是无法避免，例如排序、搜索等。在这样的情况我们可以将逻辑分成小块，然后使用requestAnimationFrame，或者将耗时的逻辑放到service worker中进行。 具体如何使用在这里不做细说，我们可以参照谷歌的这篇文档 [Optimize JavaScript Execution](https://developers.google.com/web/fundamentals/performance/rendering/optimize-javascript-execution)，上面有详细的解说。
+然而由于业务的需要，在开发中一些耗时的逻辑是无法避免的，例如排序、搜索等。在这样的情况下我们可以将逻辑分成小块，然后使用requestAnimationFrame，或者将耗时的逻辑放到service worker中进行。 具体如何使用在这里不做细说，我们可以参照谷歌的这篇文档 [Optimize JavaScript Execution](https://developers.google.com/web/fundamentals/performance/rendering/optimize-javascript-execution)，上面有详细的解说。
 
-## setTimeout 与 setInverval 为什么不准时
+## setTimeout 与 setInterval 为什么不准时
 
-（todo）
+长话短说：
+
+`setTimeout`  只是在给定的时间之后将它的 callback function 放入 callback queue 但并不能保证function 的准时执行。`setInterval` 也是，只是每隔固定的时间放入一次callback  function. 所以它们是否能准时执行都取决于当时stack 和 callback queue 的状态。但我们还是可以粗略地认为它们是准时的，因为大部分情况下这些不准时只是毫秒级的，但也需要理解它们其中的原理来处理和解释那些小部分的情况。
+
+详细解释：
+
+看了 [MDN](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout) 或 [w3schools ](https://www.w3schools.com/jsref/met_win_settimeout.asp)对 `setTimeout` 的解释，我们容易简单地认为它的作用是在一定的时间后执行一个callback function。然而这并不完全正确。根据我们在第二节中解释的 stack 和 callback queue 的概念, setTimeout 只能保证将它的callback function在一定时间之后放入callback queue 而不是执行。 如果此时callback queue 中只有这个function 且stack是空的，当然它就会被准时执行。但如果此时stack中还有尚未执行完的内容，或者在callback queue 中还有好几个callback在排队，显然我们的function会被推后执行，这个推后的时间取决与stack中的内容 和 callback queue 中排在前面的 callback 要执行多久。
+
+但我们还是可以粗略地认为它是准时的。 只要我们不在JS的线程里放入一个十分耗时的function, 或者在callback queue里瞬间塞入一大堆callback, 那么stack是时常会被空出来执行我们 `setTimeout` 扥 callback 的。在这样的情况下不准时的偏差也就只是毫秒级的。
+
+细心的你也许发现了在第二节的例子中我们使用了 `setTimeout(callback,0)`, 也就是在 0 毫秒后将`callback` 放入 callback queue。 由于queue 中的 callback 会在stack 空了之后在执行，那么这个用法其实可以作为一种控制执行顺序的工具。 让我们来看一个简单地例子：
+
+```js
+setTimeout(() => console.log("我想后执行"), 0);
+console.log("我想先执行");
+// 打印
+// 我想先执行
+// 我想后执行
+```
+
+`setInterval` 和 `setTimeout` 的实现原理是相似的。我们粗略地理解它为每隔一定的时间执行一次callback。其实是每隔一定的时间在 callback queue 中加入一次 callback, 所以它前后两次执行callback 的间隔时间也是不能保证的， 它们可长可短， 取决于stack和callback queue 的状态。
+
+其实`setInterval` 中还有一些有趣的现象和机制，如果你感兴趣可以看一看Joan Resig 的这篇博文 [How JavaScript Timers Work](https://johnresig.com/blog/how-javascript-timers-work/) , 他用一个简单地例子清晰地解释了 `setInterval` 和 `setTimeout`。我也可以在下一篇文章中做详细地解释。
+
+
+
+## 结束语
+
+谢谢你一直读到现在。这是我的第一篇博文，它记录了我对前端知识学习和思考的过程。希望你在阅读过程中有所收获。我会继续坚持下去分享我在学习工作中的心得和体会。
+
+最后，感谢这些帮助我学习文章相关内容的资料:
+
+[Asynchronous JavaScript: Promises, Callbacks, Async Await](https://www.udemy.com/course/asynchronous-javascript-promises-callbacks-async-await/)
+
+[The Javascript Runtime Environment](https://medium.com/@olinations/the-javascript-runtime-environment-d58fa2e60dd0)
+
+[How JavaScript Timers Work](https://johnresig.com/blog/how-javascript-timers-work/)
+
+[What the heck is the event loop anyway? | Philip Roberts | JSConf EU](https://www.youtube.com/watch?v=8aGhZQkoFbQ) 
+
+[Optimize JavaScript Execution](https://developers.google.com/web/fundamentals/performance/rendering/optimize-javascript-execution)
 
 
 
