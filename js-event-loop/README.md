@@ -146,7 +146,7 @@ func1();
 
 #### 回调函数队列 (Callback queue)
 
-- 回调函数队列是一个 **FIFO-first in first out（先进先出）**的数据结构。它按放入顺序存储了需要执行的回调函数。
+- 回调函数队列是一个 FIFO-first in first out（先进先出）的数据结构。它按放入顺序存储了需要执行的回调函数。
 - 当 Stack 空了的时候，队列中第一个回调函数就会被放到 Stack 里去调用。
 
 #### 事件循环(Event loop)
